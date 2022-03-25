@@ -88,3 +88,17 @@ fn add_delta_interpolation() {
 
     f.check_crc(0x2593B066);
 }
+
+#[test]
+fn saturation() {
+    let test_saturation = |delta| {
+        let mut f = fixture();
+        f.b.add_delta_fast(0, delta);
+        f.b.end_frame(OVERSAMPLE as u64 * BLIP_SIZE as u64);
+        f.b.read_samples(&mut f.buf, false);
+        f.buf[20]
+    };
+
+    assert_eq!(test_saturation(35000), 32767);
+    assert_eq!(test_saturation(-35000), -32768);
+}

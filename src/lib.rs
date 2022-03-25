@@ -82,16 +82,16 @@ impl BlipBuf {
         out[15] += BL_STEP[phase_rev][0] as i32 * delta + BL_STEP[phase_rev - 1][0] as i32 * delta2;
     }
 
-    // pub fn add_delta_fast(&mut self, time: u64, delta: i32) {
-    //     let fixed = ((time * self.factor + self.offset) >> PRE_SHIFT) as u64;
-    //     let mut out = &mut self.buf[(self.avail + (fixed >> FRAC_BITS) as usize)..];
+    pub fn add_delta_fast(&mut self, time: u64, delta: i32) {
+        let fixed = ((time * self.factor + self.offset) >> PRE_SHIFT) as u64;
+        let out = &mut self.buf[(self.avail as usize + (fixed >> FRAC_BITS) as usize)..];
 
-    //     let interp = fixed >> (FRAC_BITS - DELTA_BITS) & (DELTA_UNIT - 1) as u64;
-    //     let delta2 = delta * interp;
+        let interp = (fixed >> (FRAC_BITS - DELTA_BITS) & (DELTA_UNIT - 1) as u64) as i32;
+        let delta2 = delta * interp;
 
-    //     out[7] += delta * DELTA_UNIT as i16 - delta2 as i16;
-    //     out[8] += delta2 as i16;
-    // }
+        out[7] += delta * DELTA_UNIT - delta2;
+        out[8] += delta2;
+    }
 
     pub fn clocks_needed(&self, samples: i32) -> i32 {
         // Fail if the buffer can't hold that many more samples

@@ -63,23 +63,23 @@ impl BlipBuf {
         let delta2 = (delta * interp as i32) >> DELTA_BITS;
         let delta = delta - delta2;
 
-        out[0] += BL_STEP[phase][0] as i32 * delta + BL_STEP[phase + 1][0] as i32 * delta2;
-        out[1] += BL_STEP[phase][1] as i32 * delta + BL_STEP[phase + 1][1] as i32 * delta2;
-        out[2] += BL_STEP[phase][2] as i32 * delta + BL_STEP[phase + 1][2] as i32 * delta2;
-        out[3] += BL_STEP[phase][3] as i32 * delta + BL_STEP[phase + 1][3] as i32 * delta2;
-        out[4] += BL_STEP[phase][4] as i32 * delta + BL_STEP[phase + 1][4] as i32 * delta2;
-        out[5] += BL_STEP[phase][5] as i32 * delta + BL_STEP[phase + 1][5] as i32 * delta2;
-        out[6] += BL_STEP[phase][6] as i32 * delta + BL_STEP[phase + 1][6] as i32 * delta2;
-        out[7] += BL_STEP[phase][7] as i32 * delta + BL_STEP[phase + 1][7] as i32 * delta2;
+        out[0] = out[0].wrapping_add(BL_STEP[phase][0] as i32 * delta + BL_STEP[phase + 1][0] as i32 * delta2);
+        out[1] = out[1].wrapping_add(BL_STEP[phase][1] as i32 * delta + BL_STEP[phase + 1][1] as i32 * delta2);
+        out[2] = out[2].wrapping_add(BL_STEP[phase][2] as i32 * delta + BL_STEP[phase + 1][2] as i32 * delta2);
+        out[3] = out[3].wrapping_add(BL_STEP[phase][3] as i32 * delta + BL_STEP[phase + 1][3] as i32 * delta2);
+        out[4] = out[4].wrapping_add(BL_STEP[phase][4] as i32 * delta + BL_STEP[phase + 1][4] as i32 * delta2);
+        out[5] = out[5].wrapping_add(BL_STEP[phase][5] as i32 * delta + BL_STEP[phase + 1][5] as i32 * delta2);
+        out[6] = out[6].wrapping_add(BL_STEP[phase][6] as i32 * delta + BL_STEP[phase + 1][6] as i32 * delta2);
+        out[7] = out[7].wrapping_add(BL_STEP[phase][7] as i32 * delta + BL_STEP[phase + 1][7] as i32 * delta2);
 
-        out[8] += BL_STEP[phase_rev][7] as i32 * delta + BL_STEP[phase_rev - 1][7] as i32 * delta2;
-        out[9] += BL_STEP[phase_rev][6] as i32 * delta + BL_STEP[phase_rev - 1][6] as i32 * delta2;
-        out[10] += BL_STEP[phase_rev][5] as i32 * delta + BL_STEP[phase_rev - 1][5] as i32 * delta2;
-        out[11] += BL_STEP[phase_rev][4] as i32 * delta + BL_STEP[phase_rev - 1][4] as i32 * delta2;
-        out[12] += BL_STEP[phase_rev][3] as i32 * delta + BL_STEP[phase_rev - 1][3] as i32 * delta2;
-        out[13] += BL_STEP[phase_rev][2] as i32 * delta + BL_STEP[phase_rev - 1][2] as i32 * delta2;
-        out[14] += BL_STEP[phase_rev][1] as i32 * delta + BL_STEP[phase_rev - 1][1] as i32 * delta2;
-        out[15] += BL_STEP[phase_rev][0] as i32 * delta + BL_STEP[phase_rev - 1][0] as i32 * delta2;
+        out[8]  = out[8] .wrapping_add(BL_STEP[phase_rev][7] as i32 * delta + BL_STEP[phase_rev - 1][7] as i32 * delta2);
+        out[9]  = out[9] .wrapping_add(BL_STEP[phase_rev][6] as i32 * delta + BL_STEP[phase_rev - 1][6] as i32 * delta2);
+        out[10] = out[10].wrapping_add(BL_STEP[phase_rev][5] as i32 * delta + BL_STEP[phase_rev - 1][5] as i32 * delta2);
+        out[11] = out[11].wrapping_add(BL_STEP[phase_rev][4] as i32 * delta + BL_STEP[phase_rev - 1][4] as i32 * delta2);
+        out[12] = out[12].wrapping_add(BL_STEP[phase_rev][3] as i32 * delta + BL_STEP[phase_rev - 1][3] as i32 * delta2);
+        out[13] = out[13].wrapping_add(BL_STEP[phase_rev][2] as i32 * delta + BL_STEP[phase_rev - 1][2] as i32 * delta2);
+        out[14] = out[14].wrapping_add(BL_STEP[phase_rev][1] as i32 * delta + BL_STEP[phase_rev - 1][1] as i32 * delta2);
+        out[15] = out[15].wrapping_add(BL_STEP[phase_rev][0] as i32 * delta + BL_STEP[phase_rev - 1][0] as i32 * delta2);
     }
 
     pub fn add_delta_fast(&mut self, time: u64, delta: i32) {
@@ -123,14 +123,14 @@ impl BlipBuf {
         for i in 0..count {
             // Eliminate fraction
             let mut s = sum >> DELTA_BITS;
-            sum += self.buf[i];
+            sum = sum.wrapping_add(self.buf[i]);
             s = s.clamp(i16::MIN as i32, i16::MAX as i32);
             buf[out] = s as i16;
             out += step;
-            sum -= s << (DELTA_BITS - BASS_SHIFT);
+            sum = sum.wrapping_sub(s << (DELTA_BITS - BASS_SHIFT));
         }
         self.integrator = sum;
-        self.remove_samples(count as i32);
+        self.remove_samples(count);
         count
     }
 
@@ -142,13 +142,12 @@ impl BlipBuf {
         assert!(self.avail <= self.buf.capacity() as i32);
     }
 
-    fn remove_samples(&mut self, count: i32) {
-        let remain = self.avail + BUF_EXTRA - count;
-        self.avail -= count;
-        let start = count as usize;
-        let end = start + remain as usize;
+    fn remove_samples(&mut self, count: usize) {
+        let remain = (self.avail + BUF_EXTRA - count as i32) as usize;
+        self.avail -= count as i32;
 
-        self.buf.copy_within(start..end, 0);
+        self.buf.copy_within(count..(count + remain), 0);
+        self.buf[remain..(remain + count as usize)].fill(0);
     }
 }
 

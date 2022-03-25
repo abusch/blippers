@@ -62,6 +62,19 @@ fn fixture() -> Fixture {
 }
 
 #[test]
+fn add_delta_fast_read_samples() {
+    let mut f = fixture();
+
+    f.b.add_delta_fast(2 * OVERSAMPLE as u64, 16384);
+    f.end_frame_and_dump_buf_deltas();
+    f.check_crc(0x4FF00AB2);
+
+    f.b.add_delta_fast((2.5 * OVERSAMPLE as f32) as u64, 16384);
+    f.end_frame_and_dump_buf_deltas();
+    f.check_crc(0x7B871E92);
+}
+
+#[test]
 fn add_delta_tails() {
     let mut f = fixture();
     f.b.add_delta(0, 16384);

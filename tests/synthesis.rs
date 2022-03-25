@@ -102,3 +102,41 @@ fn saturation() {
     assert_eq!(test_saturation(35000), 32767);
     assert_eq!(test_saturation(-35000), -32768);
 }
+
+#[test]
+fn stereo_interleave() {
+    let mut f = fixture();
+    
+    f.b.add_delta(0, 16384);
+    f.b.end_frame((BLIP_SIZE * OVERSAMPLE) as u64);
+    f.b.read_samples(&mut f.buf, false);
+
+    f.b.clear();
+    f.b.add_delta(0, 16384);
+    f.b.end_frame((BLIP_SIZE * OVERSAMPLE) as u64);
+    f.b.read_samples(&mut f.stereo_buf, true);
+
+    for i in 0..BLIP_SIZE {
+        assert_eq!(f.stereo_buf[i as usize * 2], f.buf[i as usize]);
+    }
+}
+
+#[test]
+fn clear() {
+    let mut f = fixture();
+
+    // Make first and last internal samples non-zero
+    f.b.add_delta(0, 32768);
+    f.b.add_delta(((BLIP_SIZE + 2) * OVERSAMPLE + OVERSAMPLE / 2) as u64, 32768);
+
+    f.b.clear();
+
+    for _ in (0..=2).rev() {
+        f.b.end_frame((BLIP_SIZE * OVERSAMPLE) as u64);
+        f.b.read_samples(&mut f.buf, false);
+        assert_eq!(f.buf.len() as i32, BLIP_SIZE);
+        for i in 0..BLIP_SIZE {
+            assert_eq!(f.buf[i as usize], 0);
+        }
+    }
+}

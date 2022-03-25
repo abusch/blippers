@@ -1,0 +1,9 @@
+[package]
+name = "blippers"
+description = "A pure-rust port of blip-buf, a small waveform synthesis library meant for use in classic video game sound chip emulation."
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
